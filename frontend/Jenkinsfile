@@ -1,0 +1,36 @@
+pipeline {
+    agent { docker { image 'node:18-alpine' } } // Используем Docker-контейнер с Node.js
+
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm ci' // Установка зависимостей (использует package-lock.json)
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'npx ng build --configuration=production' // Сборка проекта
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'npx ng test --watch=false --browsers=ChromeHeadless' // Запуск тестов
+                sh 'npx ng lint' // Проверка кода
+            }
+        }
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'dist/**', onlyIfSuccessful: true // Сохранение сборки
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Сборка успешно завершена!'
+        }
+        failure {
+            echo 'Ошибка сборки. Проверьте логи.'
+        }
+    }
+}
